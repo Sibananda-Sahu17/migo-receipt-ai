@@ -1,4 +1,4 @@
-import { Home, MessageCircle, Settings, ShoppingBag } from "lucide-react"
+import { Home, MessageCircle, Settings, ShoppingBag, AlertTriangle } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
 
@@ -6,6 +6,7 @@ const navigationItems = [
   { icon: Home, label: "Home", href: "/home" },
   { icon: MessageCircle, label: "AI Chat", href: "/chat" },
   { icon: ShoppingBag, label: "Grocery", href: "/grocery" },
+  { icon: AlertTriangle, label: "Untracked", href: "/untracked" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ]
 

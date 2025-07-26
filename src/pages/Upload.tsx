@@ -1,9 +1,12 @@
 import { useState, useRef } from "react"
-import { Camera, Upload as UploadIcon, Video, Play, FileImage, X, Users } from "lucide-react"
+import { Camera, Upload as UploadIcon, Video, Play, FileImage, X, Users, Plus, ChevronDown } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Header } from "@/components/layout/header"
 import { Navigation } from "@/components/layout/navigation"
 import { useToast } from "@/hooks/use-toast"
@@ -13,6 +16,10 @@ export default function Upload() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [showProcessedModal, setShowProcessedModal] = useState(false)
   const [processedItems, setProcessedItems] = useState([])
+  const [itemCategories, setItemCategories] = useState({})
+  const [categories] = useState(["Food", "Groceries", "Travel", "Entertainment", "Miscellaneous"])
+  const [showNewCategoryModal, setShowNewCategoryModal] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState("")
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
@@ -72,6 +79,12 @@ export default function Upload() {
         { name: "Pastry", price: "₹120" },
       ]
       
+      // Initialize categories for items
+      const initialCategories = {}
+      processedItems.forEach((_, index) => {
+        initialCategories[index] = "Food"
+      })
+      setItemCategories(initialCategories)
       setProcessedItems(processedItems)
       setShowProcessedModal(true)
       
@@ -84,6 +97,25 @@ export default function Upload() {
 
   const removeFile = (index: number) => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const updateItemCategory = (itemIndex: number, category: string) => {
+    setItemCategories(prev => ({
+      ...prev,
+      [itemIndex]: category
+    }))
+  }
+
+  const handleAddNewCategory = () => {
+    if (newCategoryName.trim()) {
+      // In a real app, you'd update the categories list
+      setNewCategoryName("")
+      setShowNewCategoryModal(false)
+      toast({
+        title: "Category added",
+        description: `"${newCategoryName}" has been added to categories`,
+      })
+    }
   }
 
   return (
@@ -210,14 +242,42 @@ export default function Upload() {
             <DialogTitle>Processed Items</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
+            <div className="space-y-3">
               {processedItems.map((item, index) => (
-                <div key={index} className="flex justify-between p-2 bg-muted rounded-lg">
-                  <span>{item.name}</span>
-                  <span className="font-medium">{item.price}</span>
+                <div key={index} className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                  <div className="flex flex-col">
+                    <span className="font-medium">{item.name}</span>
+                    <span className="text-sm text-muted-foreground">{item.price}</span>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <Select
+                      value={itemCategories[index] || "Food"}
+                      onValueChange={(value) => updateItemCategory(index, value)}
+                    >
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map(category => (
+                          <SelectItem key={category} value={category}>
+                            {category}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               ))}
             </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowNewCategoryModal(true)}
+              className="w-full mt-2"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add New Category
+            </Button>
             <div className="flex gap-2">
               <Button 
                 variant="outline" 
@@ -246,6 +306,42 @@ export default function Upload() {
               >
                 <Users className="h-4 w-4 mr-2" />
                 Split with Friends
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Category Modal */}
+      <Dialog open={showNewCategoryModal} onOpenChange={setShowNewCategoryModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Category</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="categoryName">Category Name</Label>
+              <Input
+                id="categoryName"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="Enter category name"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => setShowNewCategoryModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                className="flex-1"
+                onClick={handleAddNewCategory}
+                disabled={!newCategoryName.trim()}
+              >
+                Add Category
               </Button>
             </div>
           </div>

@@ -14,6 +14,7 @@ import AddFriends from "./pages/AddFriends";
 import Grocery from "./pages/Grocery";
 import Login from "./pages/Login";
 import SplitWithFriends from "./pages/SplitWithFriends";
+import Untracked from "./pages/Untracked";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/grocery" element={<Grocery />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/untracked" element={<Untracked />} />
             <Route path="/split-with-friends" element={<SplitWithFriends />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

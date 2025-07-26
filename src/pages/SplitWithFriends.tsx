@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Header } from "@/components/layout/header"
+import { Navigation } from "@/components/layout/navigation"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 const SplitWithFriends = () => {
@@ -146,6 +147,8 @@ const SplitWithFriends = () => {
           Send Split Request
         </Button>
       </div>
+
+      <Navigation />
     </div>
   )
 }
