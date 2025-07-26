@@ -11,3 +11,7 @@ export const appSignup = async (email: string, name: string, password: string) =
 export const appGoogleLogin = async (access_token: string) => {
   return AXIOS_INSTANCE.post("/auth/google-login", { access_token });
 };
+
+export const appLogout = async () => {
+  return AXIOS_INSTANCE.post("/auth/logout");
+};
