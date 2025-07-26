@@ -48,20 +48,10 @@ export default function Chat() {
   const handleSendMessage = useCallback(() => {
     if (!inputValue.trim() || !user) return;
 
-    // If no current session, create one first
-    if (!currentSession) {
-      createSession().then((sessionId) => {
-        // After creating session, send the message
-        sendMessage(inputValue, sessionId);
-        setInputValue('');
-      }).catch((error) => {
-        console.error('Failed to create session:', error);
-      });
-    } else {
-      sendMessage(inputValue, currentSession.id);
-      setInputValue('');
-    }
-  }, [inputValue, user, sendMessage, currentSession, createSession]);
+    // Send message directly - session will be created by WebSocket if needed
+    sendMessage(inputValue);
+    setInputValue('');
+  }, [inputValue, user, sendMessage]);
 
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -78,7 +68,7 @@ export default function Chat() {
     } catch (error) {
       console.error('Failed to create new chat:', error);
     }
-  }, []);
+  }, [setCurrentSession, setMessages]);
 
   const handleLoadSession = useCallback(async (session: ChatSession) => {
     try {

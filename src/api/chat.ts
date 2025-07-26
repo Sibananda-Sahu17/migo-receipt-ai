@@ -24,10 +24,11 @@ export const getChatSessions = async () => {
   return AXIOS_INSTANCE.get<ChatSession[]>("/chat/sessions");
 };
 
-export const createChatSession = async (title?: string) => {
-  const params = title ? { title } : {};
-  return AXIOS_INSTANCE.post<string>("/chat/sessions", null, { params });
-};
+// Session creation is now handled by WebSocket only
+// export const createChatSession = async (title?: string) => {
+//   const params = title ? { title } : {};
+//   return AXIOS_INSTANCE.post<string>("/chat/sessions", null, { params });
+// };
 
 export const getChatSession = async (sessionId: string) => {
   return AXIOS_INSTANCE.get<ChatSession>(`/chat/sessions/${sessionId}`);

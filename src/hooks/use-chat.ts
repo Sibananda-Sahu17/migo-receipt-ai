@@ -7,7 +7,6 @@ import {
   ChatMessage,
   getChatSessions,
   getSessionMessages,
-  createChatSession,
   deleteChatSession,
   getChatSession
 } from '../api/chat';
@@ -115,7 +114,7 @@ export const useChat = ({ email, onError }: UseChatOptions): UseChatReturn => {
             const currentSessionId = currentSessionRef.current?.id;
             
             if (!currentSessionRef.current) {
-              // New session creation
+              // New session creation - this happens when first message is sent
               const newSession: ChatSession = {
                 id: data.session_id,
                 title: data.session_title,
@@ -132,6 +131,13 @@ export const useChat = ({ email, onError }: UseChatOptions): UseChatReturn => {
                   ? { ...session, title: data.session_title }
                   : session
               ));
+            } else {
+              // Session title update for a different session (shouldn't happen in normal flow)
+              setSessions(prev => prev.map(session => 
+                session.id === data.session_id 
+                  ? { ...session, title: data.session_title }
+                  : session
+              ));
             }
           }
 
@@ -140,7 +146,7 @@ export const useChat = ({ email, onError }: UseChatOptions): UseChatReturn => {
             const currentSessionId = currentSessionRef.current?.id;
             
             // Only add the message if it belongs to the currently active session
-            if (currentSessionId === data.session_id) {
+            if (currentSessionId === data.session_id || !currentSessionId) {
               const aiMessage: ChatMessage = {
                 id: Date.now().toString(),
                 session_id: data.session_id,
@@ -150,6 +156,15 @@ export const useChat = ({ email, onError }: UseChatOptions): UseChatReturn => {
                 created_at: new Date().toISOString()
               };
               setMessages(prev => [...prev, aiMessage]);
+              
+              // Update the user message with the correct session ID if this is a new session
+              if (!currentSessionId) {
+                setMessages(prev => prev.map(msg => 
+                  msg.role === 'user' && msg.session_id === 'temp' 
+                    ? { ...msg, session_id: data.session_id }
+                    : msg
+                ));
+              }
             }
           }
         } catch (error) {
@@ -219,18 +234,16 @@ export const useChat = ({ email, onError }: UseChatOptions): UseChatReturn => {
 
     const currentSessionId = sessionId || currentSessionRef.current?.id || '';
 
-    // Only add user message if we have a valid session
-    if (currentSessionId) {
-      const userMessage: ChatMessage = {
-        id: Date.now().toString(),
-        session_id: currentSessionId,
-        user_id: email,
-        content,
-        role: 'user',
-        created_at: new Date().toISOString()
-      };
-      setMessages(prev => [...prev, userMessage]);
-    }
+    // Add user message to UI immediately (will be updated when session is created)
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      session_id: currentSessionId || 'temp',
+      user_id: email,
+      content,
+      role: 'user',
+      created_at: new Date().toISOString()
+    };
+    setMessages(prev => [...prev, userMessage]);
 
     // Send message through WebSocket
     const message: WebSocketMessage = {
@@ -241,36 +254,12 @@ export const useChat = ({ email, onError }: UseChatOptions): UseChatReturn => {
     wsRef.current.send(JSON.stringify(message));
   }, [email]);
 
-  // Create new chat session
+  // Create new chat session - now handled by WebSocket
   const createSession = useCallback(async (title?: string): Promise<string> => {
-    try {
-      const response = await createChatSession(title);
-      const sessionId = response.data;
-      
-      // Load updated sessions list
-      await loadSessions();
-      
-      // Clear current messages when creating a new session
-      setMessages([]);
-      
-      // Create a temporary session object for the new session
-      const newSession: ChatSession = {
-        id: sessionId,
-        title: title || 'New Chat',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      // Set as current session
-      setCurrentSession(newSession);
-      
-      return sessionId;
-    } catch (error) {
-      console.error('Error creating session:', error);
-      onErrorRef.current?.('Failed to create chat session');
-      throw error;
-    }
-  }, [loadSessions]);
+    // Don't create session via REST API anymore
+    // Session will be created by WebSocket when first message is sent
+    return '';
+  }, []);
 
   // Load specific session and its messages
   const loadSession = useCallback(async (sessionId: string) => {
