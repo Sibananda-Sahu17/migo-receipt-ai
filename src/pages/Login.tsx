@@ -78,7 +78,22 @@ const Login = () => {
   });
 
   const handleGoogleLogin = async () => {
-    googleLogin();
+    try {
+      googleLogin();
+    } catch (error: any) {
+      // Handle popup blocked or COOP policy errors
+      if (error?.message?.includes('popup') || error?.message?.includes('COOP')) {
+        toast({ 
+          title: "Popup blocked", 
+          description: "Please allow popups for this site to use Google login." 
+        });
+      } else {
+        toast({ 
+          title: "Google login failed", 
+          description: "Please try again or use email login." 
+        });
+      }
+    }
   }
 
   return (

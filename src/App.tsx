@@ -17,6 +17,8 @@ import Login from "./pages/Login";
 import SplitWithFriends from "./pages/SplitWithFriends";
 import Untracked from "./pages/Untracked";
 import NotFound from "./pages/NotFound";
+import Landing from "./pages/Landing";
+import ReceiptSummary from "./pages/ReceiptSummary";
 
 const queryClient = new QueryClient();
 
@@ -29,12 +31,13 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<Login />} />
+              <Route path="/" element={<Landing />} />
               <Route path="/home" element={<Index />} />
               <Route path="/login" element={<Login />} />
               <Route path="/upload" element={<Upload />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/receipts" element={<Receipts />} />
+              <Route path="/receipt/:receiptId" element={<ReceiptSummary />} />
               <Route path="/add-friends" element={<AddFriends />} />
               <Route path="/grocery" element={<Grocery />} />
               <Route path="/chat" element={<Chat />} />

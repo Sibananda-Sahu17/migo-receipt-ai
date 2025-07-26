@@ -159,85 +159,31 @@ const Receipts = () => {
         {/* Receipts List */}
         <div className="space-y-3">
           {filteredReceipts.map((receipt) => (
-            <Collapsible
+            <Card
               key={receipt.id}
-              open={expandedReceipts.includes(receipt.id)}
-              onOpenChange={() => toggleReceiptExpansion(receipt.id)}
+              className="hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => navigate(`/receipt/${receipt.id}`)}
             >
-              <Card className="hover:shadow-md transition-shadow">
-                <CollapsibleTrigger asChild>
-                  <CardContent className="p-4 cursor-pointer">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="font-semibold">{receipt.merchant}</h3>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold">{receipt.amount}</span>
-                            {expandedReceipts.includes(receipt.id) ? 
-                              <ChevronUp className="h-4 w-4" /> : 
-                              <ChevronDown className="h-4 w-4" />
-                            }
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="secondary" className="text-xs">
-                            {receipt.category}
-                          </Badge>
-                          <Badge className={`text-xs ${getStatusColor(receipt.status)}`}>
-                            {receipt.status}
-                          </Badge>
-                        </div>
-                        
-                        <p className="text-sm text-muted-foreground">{receipt.date}</p>
-                      </div>
-                      
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button variant="ghost" size="sm">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuItem onClick={(e) => {
-                            e.stopPropagation()
-                            handleSplitWithFriends(receipt)
-                          }}>
-                            <Users className="h-4 w-4 mr-2" />
-                            Split with Friends
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => {
-                            e.stopPropagation()
-                            handleEditCategory(receipt)
-                          }}>
-                            Edit Category
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
-                            Add to Wallet
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold">{receipt.merchant}</h3>
+                      <span className="font-bold">{receipt.amount}</span>
                     </div>
-                  </CardContent>
-                </CollapsibleTrigger>
-                
-                <CollapsibleContent>
-                  <CardContent className="pt-0 pb-4 px-4">
-                    <div className="border-t pt-3">
-                      <h4 className="font-medium mb-3">Items</h4>
-                      <div className="space-y-2">
-                        {receipt.items.map((item, index) => (
-                          <div key={index} className="flex justify-between text-sm">
-                            <span>{item.name}</span>
-                            <span className="font-medium">{item.price}</span>
-                          </div>
-                        ))}
-                      </div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge variant="secondary" className="text-xs">
+                        {receipt.category}
+                      </Badge>
+                      <Badge className={`text-xs ${getStatusColor(receipt.status)}`}>
+                        {receipt.status}
+                      </Badge>
                     </div>
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
+                    <p className="text-sm text-muted-foreground">{receipt.date}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
 
