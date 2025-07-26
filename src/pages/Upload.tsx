@@ -1,8 +1,9 @@
 import { useState, useRef } from "react"
-import { Camera, Upload as UploadIcon, Video, Play, FileImage, X } from "lucide-react"
+import { Camera, Upload as UploadIcon, Video, Play, FileImage, X, Users } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Header } from "@/components/layout/header"
 import { Navigation } from "@/components/layout/navigation"
 import { useToast } from "@/hooks/use-toast"
@@ -10,6 +11,8 @@ import { useToast } from "@/hooks/use-toast"
 export default function Upload() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
+  const [showProcessedModal, setShowProcessedModal] = useState(false)
+  const [processedItems, setProcessedItems] = useState([])
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
@@ -61,11 +64,21 @@ export default function Upload() {
     // Simulate processing
     setTimeout(() => {
       setIsProcessing(false)
+      
+      // Show processed items modal
+      const processedItems = [
+        { name: "Coffee Latte", price: "₹250" },
+        { name: "Sandwich", price: "₹180" },
+        { name: "Pastry", price: "₹120" },
+      ]
+      
+      setProcessedItems(processedItems)
+      setShowProcessedModal(true)
+      
       toast({
         title: "Processing complete!",
         description: `${selectedFiles.length} receipt(s) processed successfully`,
       })
-      navigate("/dashboard")
     }, 3000)
   }
 
@@ -189,6 +202,55 @@ export default function Upload() {
       </div>
 
       <Navigation />
+
+      {/* Processed Items Modal */}
+      <Dialog open={showProcessedModal} onOpenChange={setShowProcessedModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Processed Items</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              {processedItems.map((item, index) => (
+                <div key={index} className="flex justify-between p-2 bg-muted rounded-lg">
+                  <span>{item.name}</span>
+                  <span className="font-medium">{item.price}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => {
+                  setShowProcessedModal(false)
+                  navigate("/dashboard")
+                }}
+              >
+                OK
+              </Button>
+              <Button 
+                className="flex-1"
+                onClick={() => {
+                  setShowProcessedModal(false)
+                  navigate("/split-with-friends", { 
+                    state: { 
+                      receiptData: { 
+                        items: processedItems,
+                        merchant: "Uploaded Receipt",
+                        amount: processedItems.reduce((sum, item) => sum + parseInt(item.price.replace('₹', '')), 0)
+                      } 
+                    } 
+                  })
+                }}
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Split with Friends
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

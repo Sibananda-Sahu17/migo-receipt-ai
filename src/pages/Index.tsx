@@ -56,9 +56,9 @@ const Index = () => {
             />
             <div className="absolute bottom-4 left-4">
               <Link to="/upload">
-                <Button size="lg" className="h-12 px-8 shadow-lg">
+                <Button size="sm" className="h-10 px-6 shadow-lg">
                   Get Started
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
             </div>
@@ -72,8 +72,8 @@ const Index = () => {
               const Icon = step.icon
               return (
                 <Link key={index} to={step.href}>
-                  <Card className="hover:shadow-md transition-all cursor-pointer">
-                    <CardContent className="p-3 text-center">
+                  <Card className="hover:shadow-md transition-all cursor-pointer h-20">
+                    <CardContent className="p-3 text-center h-full flex flex-col justify-center">
                       <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center mx-auto mb-2">
                         <Icon className="h-5 w-5 text-primary-foreground" />
                       </div>

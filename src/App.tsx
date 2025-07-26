@@ -13,6 +13,7 @@ import Receipts from "./pages/Receipts";
 import AddFriends from "./pages/AddFriends";
 import Grocery from "./pages/Grocery";
 import Login from "./pages/Login";
+import SplitWithFriends from "./pages/SplitWithFriends";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,7 +26,8 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={<Login />} />
+            <Route path="/home" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/upload" element={<Upload />} />
             <Route path="/dashboard" element={<Dashboard />} />
@@ -34,6 +36,7 @@ const App = () => (
             <Route path="/grocery" element={<Grocery />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/split-with-friends" element={<SplitWithFriends />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

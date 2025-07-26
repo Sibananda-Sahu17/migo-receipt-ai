@@ -1,9 +1,12 @@
 import { useState } from "react"
-import { ArrowLeft, MoreVertical, Users, Filter } from "lucide-react"
-import { Link } from "react-router-dom"
+import { ArrowLeft, MoreVertical, Users, Filter, ChevronDown, ChevronUp } from "lucide-react"
+import { Link, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Header } from "@/components/layout/header"
 import { Navigation } from "@/components/layout/navigation"
 import {
@@ -19,9 +22,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 
 const Receipts = () => {
+  const navigate = useNavigate()
   const [selectedCategory, setSelectedCategory] = useState("all")
+  const [expandedReceipts, setExpandedReceipts] = useState<number[]>([])
+  const [isEditCategoryOpen, setIsEditCategoryOpen] = useState(false)
+  const [editingReceipt, setEditingReceipt] = useState(null)
+  const [newCategory, setNewCategory] = useState("")
 
   const receipts = [
     {
@@ -30,7 +43,12 @@ const Receipts = () => {
       amount: "₹450",
       date: "Today, 2:30 PM",
       category: "Food",
-      status: "Processed"
+      status: "Processed",
+      items: [
+        { name: "Coffee Latte", price: "₹250" },
+        { name: "Chocolate Muffin", price: "₹120" },
+        { name: "Service Tax", price: "₹80" }
+      ]
     },
     {
       id: 2,
@@ -38,7 +56,13 @@ const Receipts = () => {
       amount: "₹2,850",
       date: "Yesterday, 6:15 PM",
       category: "Groceries",
-      status: "Processing"
+      status: "Processing",
+      items: [
+        { name: "Rice 5kg", price: "₹400" },
+        { name: "Milk 2L", price: "₹120" },
+        { name: "Vegetables", price: "₹300" },
+        { name: "Delivery Charges", price: "₹30" }
+      ]
     },
     {
       id: 3,
@@ -46,7 +70,11 @@ const Receipts = () => {
       amount: "₹180",
       date: "Dec 23, 9:45 AM",
       category: "Travel",
-      status: "Pending"
+      status: "Pending",
+      items: [
+        { name: "Ride Fare", price: "₹150" },
+        { name: "Service Fee", price: "₹30" }
+      ]
     },
     {
       id: 4,
@@ -54,7 +82,12 @@ const Receipts = () => {
       amount: "₹1,200",
       date: "Dec 22, 3:20 PM",
       category: "Misc",
-      status: "Processed"
+      status: "Processed",
+      items: [
+        { name: "Wireless Mouse", price: "₹800" },
+        { name: "Phone Case", price: "₹300" },
+        { name: "Shipping", price: "₹100" }
+      ]
     }
   ]
 
@@ -72,6 +105,30 @@ const Receipts = () => {
   const filteredReceipts = selectedCategory === "all" 
     ? receipts 
     : receipts.filter(receipt => receipt.category === selectedCategory)
+
+  const toggleReceiptExpansion = (receiptId: number) => {
+    setExpandedReceipts(prev =>
+      prev.includes(receiptId)
+        ? prev.filter(id => id !== receiptId)
+        : [...prev, receiptId]
+    )
+  }
+
+  const handleEditCategory = (receipt) => {
+    setEditingReceipt(receipt)
+    setNewCategory(receipt.category)
+    setIsEditCategoryOpen(true)
+  }
+
+  const saveCategory = () => {
+    // Here you would make API call to update category
+    setIsEditCategoryOpen(false)
+    setEditingReceipt(null)
+  }
+
+  const handleSplitWithFriends = (receipt) => {
+    navigate("/split-with-friends", { state: { receiptData: receipt } })
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -102,48 +159,114 @@ const Receipts = () => {
         {/* Receipts List */}
         <div className="space-y-3">
           {filteredReceipts.map((receipt) => (
-            <Card key={receipt.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold">{receipt.merchant}</h3>
-                      <span className="font-bold">{receipt.amount}</span>
+            <Collapsible
+              key={receipt.id}
+              open={expandedReceipts.includes(receipt.id)}
+              onOpenChange={() => toggleReceiptExpansion(receipt.id)}
+            >
+              <Card className="hover:shadow-md transition-shadow">
+                <CollapsibleTrigger asChild>
+                  <CardContent className="p-4 cursor-pointer">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-semibold">{receipt.merchant}</h3>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold">{receipt.amount}</span>
+                            {expandedReceipts.includes(receipt.id) ? 
+                              <ChevronUp className="h-4 w-4" /> : 
+                              <ChevronDown className="h-4 w-4" />
+                            }
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge variant="secondary" className="text-xs">
+                            {receipt.category}
+                          </Badge>
+                          <Badge className={`text-xs ${getStatusColor(receipt.status)}`}>
+                            {receipt.status}
+                          </Badge>
+                        </div>
+                        
+                        <p className="text-sm text-muted-foreground">{receipt.date}</p>
+                      </div>
+                      
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <Button variant="ghost" size="sm">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem onClick={(e) => {
+                            e.stopPropagation()
+                            handleSplitWithFriends(receipt)
+                          }}>
+                            <Users className="h-4 w-4 mr-2" />
+                            Split with Friends
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => {
+                            e.stopPropagation()
+                            handleEditCategory(receipt)
+                          }}>
+                            Edit Category
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+                            Add to Wallet
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
-                    
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge variant="secondary" className="text-xs">
-                        {receipt.category}
-                      </Badge>
-                      <Badge className={`text-xs ${getStatusColor(receipt.status)}`}>
-                        {receipt.status}
-                      </Badge>
+                  </CardContent>
+                </CollapsibleTrigger>
+                
+                <CollapsibleContent>
+                  <CardContent className="pt-0 pb-4 px-4">
+                    <div className="border-t pt-3">
+                      <h4 className="font-medium mb-3">Items</h4>
+                      <div className="space-y-2">
+                        {receipt.items.map((item, index) => (
+                          <div key={index} className="flex justify-between text-sm">
+                            <span>{item.name}</span>
+                            <span className="font-medium">{item.price}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    
-                    <p className="text-sm text-muted-foreground">{receipt.date}</p>
-                  </div>
-                  
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem>
-                        <Users className="h-4 w-4 mr-2" />
-                        Split with Friends
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>Edit Category</DropdownMenuItem>
-                      <DropdownMenuItem>Add to Wallet</DropdownMenuItem>
-                      <DropdownMenuItem>View Details</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
           ))}
         </div>
+
+        {/* Edit Category Modal */}
+        <Dialog open={isEditCategoryOpen} onOpenChange={setIsEditCategoryOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Category</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="category">Category</Label>
+                <Select value={newCategory} onValueChange={setNewCategory}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map(category => (
+                      <SelectItem key={category} value={category}>
+                        {category === "all" ? "All Categories" : category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={saveCategory} className="w-full">Save Category</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {filteredReceipts.length === 0 && (
           <div className="text-center py-12">

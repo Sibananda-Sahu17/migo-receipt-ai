@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
 
 const navigationItems = [
-  { icon: Home, label: "Home", href: "/" },
+  { icon: Home, label: "Home", href: "/home" },
   { icon: MessageCircle, label: "AI Chat", href: "/chat" },
   { icon: ShoppingBag, label: "Grocery", href: "/grocery" },
   { icon: Settings, label: "Settings", href: "/settings" },

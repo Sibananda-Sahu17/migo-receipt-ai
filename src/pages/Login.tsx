@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -7,6 +8,7 @@ import { Separator } from "@/components/ui/separator"
 import { Scan } from "lucide-react"
 
 const Login = () => {
+  const navigate = useNavigate()
   const [isSignUp, setIsSignUp] = useState(false)
   const [formData, setFormData] = useState({
     fullName: "",
@@ -24,7 +26,7 @@ const Login = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     // Handle login/signup logic here
-    console.log(isSignUp ? "Sign Up" : "Sign In", formData)
+    navigate("/home")
   }
 
   return (
@@ -134,7 +136,11 @@ const Login = () => {
             </div>
           </div>
 
-          <Button variant="outline" className="w-full">
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={() => navigate("/home")}
+          >
             Continue with Google
           </Button>
 

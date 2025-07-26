@@ -9,6 +9,7 @@ import {
   Wallet,
   Database
 } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
@@ -17,6 +18,8 @@ import { Navigation } from "@/components/layout/navigation"
 import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function Settings() {
+  const navigate = useNavigate()
+  
   const settingsGroups = [
     {
       title: "Account",
@@ -113,7 +116,12 @@ export default function Settings() {
         {/* Sign Out */}
         <Card className="mt-6">
           <CardContent className="p-4">
-            <Button variant="destructive" className="w-full" size="lg">
+            <Button 
+              variant="destructive" 
+              className="w-full" 
+              size="lg"
+              onClick={() => navigate("/login")}
+            >
               <LogOut className="h-5 w-5 mr-2" />
               Sign Out
             </Button>
