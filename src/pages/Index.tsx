@@ -1,9 +1,10 @@
-import { ArrowRight, Scan, Brain, TrendingUp, Wallet } from "lucide-react"
+import { ArrowRight, Scan, Brain, Receipt, Users } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Header } from "@/components/layout/header"
 import { Navigation } from "@/components/layout/navigation"
+import heroImage from "@/assets/hero-image.jpg"
 
 const Index = () => {
   const features = [
@@ -20,13 +21,13 @@ const Index = () => {
       color: "bg-accent",
     },
     {
-      icon: TrendingUp,
+      icon: Receipt,
       title: "Analytics",
       description: "Track patterns, split bills, and manage expenses",
       color: "bg-success",
     },
     {
-      icon: Wallet,
+      icon: Users,
       title: "Google Wallet",
       description: "Save receipts directly to your wallet",
       color: "bg-warning",
@@ -34,10 +35,10 @@ const Index = () => {
   ]
 
   const steps = [
-    { icon: Scan, title: "Upload", description: "Capture or upload receipt" },
-    { icon: Brain, title: "AI Analytics", description: "Smart data extraction" },
-    { icon: TrendingUp, title: "Receipts", description: "View and categorize receipts" },
-    { icon: Wallet, title: "Add Friends", description: "Split expenses with friends" },
+    { icon: Scan, title: "Upload", href: "/upload" },
+    { icon: Brain, title: "AI Analytics", href: "/dashboard" },
+    { icon: Receipt, title: "Receipts", href: "/receipts" },
+    { icon: Users, title: "Add Friends", href: "/add-friends" },
   ]
 
   return (
@@ -46,38 +47,43 @@ const Index = () => {
       
       <div className="px-4 pt-4 pb-20">
         {/* Hero Section */}
-        <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Scan className="h-10 w-10 text-primary-foreground" />
+        <div className="mb-8 relative">
+          <div className="relative rounded-2xl overflow-hidden mb-4">
+            <img 
+              src={heroImage} 
+              alt="Migo AI Receipt Management" 
+              className="w-full h-64 object-cover"
+            />
+            <div className="absolute bottom-4 left-4">
+              <Link to="/upload">
+                <Button size="lg" className="h-12 px-8 shadow-lg">
+                  Get Started
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
+            </div>
           </div>
-          <h1 className="text-3xl font-bold mb-2">Smart Receipt Management</h1>
-          <p className="text-muted-foreground mb-6">
+          <p className="text-center text-muted-foreground">
             AI-powered insights for your expenses, just like Google Pay but for receipts
           </p>
-          <Link to="/upload">
-            <Button size="lg" className="h-12 px-8">
-              Get Started
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </Link>
         </div>
 
-        {/* How it Works */}
+        {/* Quick Actions */}
         <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">How it works</h2>
           <div className="grid grid-cols-4 gap-2">
             {steps.map((step, index) => {
               const Icon = step.icon
               return (
-                <Card key={index}>
-                  <CardContent className="p-3 text-center">
-                    <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center mx-auto mb-2">
-                      <Icon className="h-5 w-5 text-primary-foreground" />
-                    </div>
-                    <h3 className="font-semibold text-xs mb-1">{step.title}</h3>
-                    <p className="text-[10px] text-muted-foreground">{step.description}</p>
-                  </CardContent>
-                </Card>
+                <Link key={index} to={step.href}>
+                  <Card className="hover:shadow-md transition-all cursor-pointer">
+                    <CardContent className="p-3 text-center">
+                      <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center mx-auto mb-2">
+                        <Icon className="h-5 w-5 text-primary-foreground" />
+                      </div>
+                      <h3 className="font-semibold text-xs">{step.title}</h3>
+                    </CardContent>
+                  </Card>
+                </Link>
               )
             })}
           </div>

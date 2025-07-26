@@ -11,6 +11,7 @@ import Chat from "./pages/Chat";
 import Settings from "./pages/Settings";
 import Receipts from "./pages/Receipts";
 import AddFriends from "./pages/AddFriends";
+import Grocery from "./pages/Grocery";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/receipts" element={<Receipts />} />
             <Route path="/add-friends" element={<AddFriends />} />
+            <Route path="/grocery" element={<Grocery />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/settings" element={<Settings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

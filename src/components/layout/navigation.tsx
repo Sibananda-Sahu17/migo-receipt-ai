@@ -1,12 +1,11 @@
-import { Home, Camera, BarChart3, MessageCircle, Settings, Receipt, Users } from "lucide-react"
+import { Home, MessageCircle, Settings, ShoppingBag } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
 
 const navigationItems = [
   { icon: Home, label: "Home", href: "/" },
-  { icon: Camera, label: "Scan", href: "/upload" },
-  { icon: Receipt, label: "Receipts", href: "/receipts" },
-  { icon: Users, label: "Friends", href: "/add-friends" },
+  { icon: MessageCircle, label: "AI Chat", href: "/chat" },
+  { icon: ShoppingBag, label: "Grocery", href: "/grocery" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ]
 
