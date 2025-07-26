@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator"
 import { Scan } from "lucide-react"
 import { appLogin, appSignup, appGoogleLogin } from "@/api/auth";
 import { useToast } from "@/components/ui/use-toast";
+import { useGoogleLogin } from "@react-oauth/google";
 
 const Login = () => {
   const navigate = useNavigate()
@@ -33,12 +34,15 @@ const Login = () => {
     try {
       if (isSignUp) {
         await appSignup(formData.email, formData.fullName, formData.password);
-        toast({ title: "Sign up successful!", description: "You can now sign in." });
+        toast({ title: "Sign up successful!"});
         setIsSignUp(false);
+
+        await appLogin(formData.email, formData.password);
+        navigate("/home");
       } else {
         await appLogin(formData.email, formData.password);
         toast({ title: "Login successful!" });
-        navigate("/dashboard");
+        navigate("/home");
       }
     } catch (err: any) {
       toast({
@@ -50,12 +54,31 @@ const Login = () => {
     }
   }
 
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setLoading(true);
+      try {
+        // tokenResponse contains access_token
+        await appGoogleLogin(tokenResponse.access_token);
+        toast({ title: "Google login successful!" });
+        navigate("/home");
+      } catch (err: any) {
+        toast({
+          title: "Google login failed",
+          description: err?.response?.data?.message || err.message || "An error occurred."
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    onError: (error) => {
+      toast({ title: "Google login failed", description: error?.error || "An error occurred." });
+    },
+    flow: "implicit", // or remove for default, or use "auth-code" if backend expects code
+  });
+
   const handleGoogleLogin = async () => {
-    toast({ title: "Google login not implemented yet." });
-    // Example for future:
-    // const accessToken = await getGoogleAccessToken();
-    // await appGoogleLogin(accessToken);
-    // navigate("/dashboard");
+    googleLogin();
   }
 
   return (
