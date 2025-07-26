@@ -48,7 +48,7 @@ const Index = () => {
       <div className="px-4 pt-4 pb-20">
         {/* Hero Section */}
         <div className="mb-8 relative">
-          <div className="relative rounded-2xl overflow-hidden mb-4">
+          <div className="relative rounded-2xl overflow-hidden">
             <img 
               src={heroImage} 
               alt="Migo AI Receipt Management" 
@@ -63,9 +63,6 @@ const Index = () => {
               </Link>
             </div>
           </div>
-          <p className="text-center text-muted-foreground">
-            AI-powered insights for your expenses, just like Google Pay but for receipts
-          </p>
         </div>
 
         {/* Quick Actions */}
