@@ -141,29 +141,72 @@ export const useChat = ({ email, onError }: UseChatOptions): UseChatReturn => {
             }
           }
 
-          // Add AI message to the conversation only if it belongs to the current session
-          if (data.response && data.is_final && data.session_id) {
+          // Handle streaming AI responses
+          if (data.response && data.session_id) {
             const currentSessionId = currentSessionRef.current?.id;
             
-            // Only add the message if it belongs to the currently active session
+            // Only process if it belongs to the currently active session
             if (currentSessionId === data.session_id || !currentSessionId) {
-              const aiMessage: ChatMessage = {
-                id: Date.now().toString(),
-                session_id: data.session_id,
-                user_id: email,
-                content: data.response,
-                role: 'ai',
-                created_at: new Date().toISOString()
-              };
-              setMessages(prev => [...prev, aiMessage]);
               
-              // Update the user message with the correct session ID if this is a new session
-              if (!currentSessionId) {
-                setMessages(prev => prev.map(msg => 
-                  msg.role === 'user' && msg.session_id === 'temp' 
-                    ? { ...msg, session_id: data.session_id }
-                    : msg
-                ));
+              if (data.is_final) {
+                // Final response - replace streaming message with final content
+                setMessages(prev => {
+                  const lastMessage = prev[prev.length - 1];
+                  
+                  // If last message is a streaming AI message, replace it with final content
+                  if (lastMessage && lastMessage.role === 'ai' && lastMessage.session_id === data.session_id) {
+                    return prev.map((msg, index) => 
+                      index === prev.length - 1 
+                        ? { ...msg, content: data.response, id: `final_${Date.now()}_${Math.random()}` }
+                        : msg
+                    );
+                  } else {
+                    // No streaming message found, add final message
+                    const aiMessage: ChatMessage = {
+                      id: `final_${Date.now()}_${Math.random()}`,
+                      session_id: data.session_id,
+                      user_id: email,
+                      content: data.response,
+                      role: 'ai',
+                      created_at: new Date().toISOString()
+                    };
+                    return [...prev, aiMessage];
+                  }
+                });
+                
+                // Update the user message with the correct session ID if this is a new session
+                if (!currentSessionId) {
+                  setMessages(prev => prev.map(msg => 
+                    msg.role === 'user' && msg.session_id === 'temp' 
+                      ? { ...msg, session_id: data.session_id }
+                      : msg
+                  ));
+                }
+              } else {
+                // Streaming chunk - update or create streaming message
+                setMessages(prev => {
+                  const lastMessage = prev[prev.length - 1];
+                  
+                  // If last message is a streaming AI message, update it
+                  if (lastMessage && lastMessage.role === 'ai' && lastMessage.session_id === data.session_id) {
+                    return prev.map((msg, index) => 
+                      index === prev.length - 1 
+                        ? { ...msg, content: msg.content + data.response }
+                        : msg
+                    );
+                  } else {
+                    // Create new streaming AI message
+                    const streamingMessage: ChatMessage = {
+                      id: `streaming_${Date.now()}_${Math.random()}`,
+                      session_id: data.session_id,
+                      user_id: email,
+                      content: data.response,
+                      role: 'ai',
+                      created_at: new Date().toISOString()
+                    };
+                    return [...prev, streamingMessage];
+                  }
+                });
               }
             }
           }
