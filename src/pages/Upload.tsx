@@ -17,7 +17,7 @@ export default function Upload() {
   const [showProcessedModal, setShowProcessedModal] = useState(false)
   const [processedItems, setProcessedItems] = useState([])
   const [itemCategories, setItemCategories] = useState({})
-  const [categories] = useState(["Food", "Groceries", "Travel", "Entertainment", "Miscellaneous"])
+  const [categories, setCategories] = useState(["Food", "Groceries", "Travel", "Entertainment", "Miscellaneous"])
   const [showNewCategoryModal, setShowNewCategoryModal] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState("")
   const cameraInputRef = useRef<HTMLInputElement>(null)
@@ -108,12 +108,12 @@ export default function Upload() {
 
   const handleAddNewCategory = () => {
     if (newCategoryName.trim()) {
-      // In a real app, you'd update the categories list
+      setCategories(prev => [...prev, newCategoryName.trim()])
       setNewCategoryName("")
       setShowNewCategoryModal(false)
       toast({
         title: "Category added",
-        description: `"${newCategoryName}" has been added to categories`,
+        description: `"${newCategoryName.trim()}" has been added to categories`,
       })
     }
   }

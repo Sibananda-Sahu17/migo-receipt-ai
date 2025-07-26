@@ -12,7 +12,7 @@ export default function Untracked() {
   const { toast } = useToast()
   const navigate = useNavigate()
 
-  const [untrackedExpenses] = useState([
+  const [untrackedExpenses, setUntrackedExpenses] = useState([
     {
       id: 1,
       name: "Amazon Purchase",
@@ -59,6 +59,22 @@ export default function Untracked() {
   }
 
   const handleAddToMiscellaneous = (expense: any) => {
+    // Remove from untracked expenses
+    setUntrackedExpenses(prev => prev.filter(item => item.id !== expense.id))
+    
+    // Add to receipts (in a real app, this would persist to backend/storage)
+    const miscReceipt = {
+      id: Date.now(),
+      merchant: expense.name,
+      amount: expense.amount,
+      date: expense.date,
+      category: "Miscellaneous",
+      items: [{
+        name: expense.name,
+        price: expense.amount
+      }]
+    }
+    
     toast({
       title: "Added to Miscellaneous",
       description: `${expense.name} has been added to your receipts as miscellaneous`,
