@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label"
 import { Header } from "@/components/layout/header"
 import { Navigation } from "@/components/layout/navigation"
 import { useToast } from "@/hooks/use-toast"
+import { generateUploadUrl, uploadFileToSignedUrl } from "@/api/storage"
+import { createRawReceipt } from "@/api/receipt"
 
 export default function Upload() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
@@ -56,7 +58,7 @@ export default function Upload() {
     })
   }
 
-  const handleProcess = () => {
+  const handleProcess = async () => {
     if (selectedFiles.length === 0) {
       toast({
         title: "No files selected",
@@ -67,32 +69,65 @@ export default function Upload() {
     }
 
     setIsProcessing(true)
-    
-    // Simulate processing
-    setTimeout(() => {
+
+    try {
+      for (const file of selectedFiles) {
+        // 1. Generate upload URL
+        const uploadUrlRes = await generateUploadUrl({
+          filename: file.name,
+          file_type: "receipt",
+          content_type: file.type || "image/jpeg",
+          expires_in_minutes: 60,
+        })
+        const { upload_url, file_path } = uploadUrlRes.data
+
+        // 2. Convert file to blob (File is already a Blob)
+        const fileBlob = file
+
+        // 3. Upload to signed URL
+        await uploadFileToSignedUrl(fileBlob, upload_url, file.type || "image/jpeg")
+
+        // 4. Save receipt data reference
+        const receiptData = {
+          filename: file.name,
+          file_type: "image",
+          content_type: file.type || "image/jpeg",
+          file_size: fileBlob.size,
+          file_path: file_path
+        }
+        await createRawReceipt(receiptData)
+      }
+
+      // Simulate processing (show modal, etc.)
+      setTimeout(() => {
+        setIsProcessing(false)
+        // Show processed items modal
+        const processedItems = [
+          { name: "Coffee Latte", price: "₹250" },
+          { name: "Sandwich", price: "₹180" },
+          { name: "Pastry", price: "₹120" },
+        ]
+        // Initialize categories for items
+        const initialCategories = {}
+        processedItems.forEach((_, index) => {
+          initialCategories[index] = "Food"
+        })
+        setItemCategories(initialCategories)
+        setProcessedItems(processedItems)
+        setShowProcessedModal(true)
+        toast({
+          title: "Processing complete!",
+          description: `${selectedFiles.length} receipt(s) processed successfully`,
+        })
+      }, 1000)
+    } catch (error) {
       setIsProcessing(false)
-      
-      // Show processed items modal
-      const processedItems = [
-        { name: "Coffee Latte", price: "₹250" },
-        { name: "Sandwich", price: "₹180" },
-        { name: "Pastry", price: "₹120" },
-      ]
-      
-      // Initialize categories for items
-      const initialCategories = {}
-      processedItems.forEach((_, index) => {
-        initialCategories[index] = "Food"
-      })
-      setItemCategories(initialCategories)
-      setProcessedItems(processedItems)
-      setShowProcessedModal(true)
-      
       toast({
-        title: "Processing complete!",
-        description: `${selectedFiles.length} receipt(s) processed successfully`,
+        title: "Upload failed",
+        description: "There was an error uploading one or more files.",
+        variant: "destructive",
       })
-    }, 3000)
+    }
   }
 
   const removeFile = (index: number) => {
