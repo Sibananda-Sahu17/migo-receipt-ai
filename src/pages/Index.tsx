@@ -34,10 +34,10 @@ const Index = () => {
   ]
 
   const steps = [
-    { step: "1", title: "Upload", description: "Capture or upload receipt" },
-    { step: "2", title: "AI Analysis", description: "Smart data extraction" },
-    { step: "3", title: "Insights", description: "Get spending analytics" },
-    { step: "4", title: "Save", description: "Store in Google Wallet" },
+    { icon: Scan, title: "Upload", description: "Capture or upload receipt" },
+    { icon: Brain, title: "AI Analytics", description: "Smart data extraction" },
+    { icon: TrendingUp, title: "Receipts", description: "View and categorize receipts" },
+    { icon: Wallet, title: "Add Friends", description: "Split expenses with friends" },
   ]
 
   return (
@@ -65,18 +65,21 @@ const Index = () => {
         {/* How it Works */}
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-4">How it works</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {steps.map((step, index) => (
-              <Card key={index}>
-                <CardContent className="p-4 text-center">
-                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center mx-auto mb-2 text-sm font-bold">
-                    {step.step}
-                  </div>
-                  <h3 className="font-semibold text-sm mb-1">{step.title}</h3>
-                  <p className="text-xs text-muted-foreground">{step.description}</p>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="grid grid-cols-4 gap-2">
+            {steps.map((step, index) => {
+              const Icon = step.icon
+              return (
+                <Card key={index}>
+                  <CardContent className="p-3 text-center">
+                    <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center mx-auto mb-2">
+                      <Icon className="h-5 w-5 text-primary-foreground" />
+                    </div>
+                    <h3 className="font-semibold text-xs mb-1">{step.title}</h3>
+                    <p className="text-[10px] text-muted-foreground">{step.description}</p>
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
         </div>
 

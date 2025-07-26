@@ -1,5 +1,6 @@
-import { useState } from "react"
-import { Camera, Upload as UploadIcon, Video, Play, FileImage } from "lucide-react"
+import { useState, useRef } from "react"
+import { Camera, Upload as UploadIcon, Video, Play, FileImage, X } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Header } from "@/components/layout/header"
@@ -9,6 +10,10 @@ import { useToast } from "@/hooks/use-toast"
 export default function Upload() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const videoInputRef = useRef<HTMLInputElement>(null)
+  const navigate = useNavigate()
   const { toast } = useToast()
 
   const handleFileSelect = (files: FileList | null) => {
@@ -23,26 +28,21 @@ export default function Upload() {
   }
 
   const handleCapture = () => {
-    // Camera capture logic would go here
-    toast({
-      title: "Camera capture",
-      description: "Camera feature will be implemented",
-    })
+    cameraInputRef.current?.click()
+  }
+
+  const handleFileUpload = () => {
+    fileInputRef.current?.click()
   }
 
   const handleVideoCapture = () => {
-    // Video capture logic would go here
-    toast({
-      title: "Video capture",
-      description: "Video capture feature will be implemented",
-    })
+    videoInputRef.current?.click()
   }
 
   const handleLiveStream = () => {
-    // Live stream logic would go here
     toast({
       title: "Live stream",
-      description: "Live stream feature will be implemented",
+      description: "Live stream feature coming soon!",
     })
   }
 
@@ -65,7 +65,7 @@ export default function Upload() {
         title: "Processing complete!",
         description: `${selectedFiles.length} receipt(s) processed successfully`,
       })
-      setSelectedFiles([])
+      navigate("/dashboard")
     }, 3000)
   }
 
@@ -89,22 +89,12 @@ export default function Upload() {
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleFileUpload}>
             <CardContent className="flex flex-col items-center gap-3 p-6">
               <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
                 <UploadIcon className="h-6 w-6 text-primary-foreground" />
               </div>
-              <label htmlFor="file-upload" className="font-medium cursor-pointer">
-                Upload File
-              </label>
-              <input
-                id="file-upload"
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={(e) => handleFileSelect(e.target.files)}
-              />
+              <span className="font-medium">Upload File</span>
             </CardContent>
           </Card>
 
@@ -127,6 +117,34 @@ export default function Upload() {
           </Card>
         </div>
 
+        {/* Hidden file inputs */}
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          multiple
+          className="hidden"
+          onChange={(e) => handleFileSelect(e.target.files)}
+        />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(e) => handleFileSelect(e.target.files)}
+        />
+        <input
+          ref={videoInputRef}
+          type="file"
+          accept="video/*"
+          capture="environment"
+          multiple
+          className="hidden"
+          onChange={(e) => handleFileSelect(e.target.files)}
+        />
+
         {/* Selected Files */}
         {selectedFiles.length > 0 && (
           <Card className="mb-6">
@@ -144,7 +162,7 @@ export default function Upload() {
                       size="sm"
                       onClick={() => removeFile(index)}
                     >
-                      Remove
+                      <X className="h-4 w-4" />
                     </Button>
                   </div>
                 ))}

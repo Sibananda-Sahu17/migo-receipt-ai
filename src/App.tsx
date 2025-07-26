@@ -9,6 +9,9 @@ import Upload from "./pages/Upload";
 import Dashboard from "./pages/Dashboard"; 
 import Chat from "./pages/Chat";
 import Settings from "./pages/Settings";
+import Receipts from "./pages/Receipts";
+import AddFriends from "./pages/AddFriends";
+import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,8 +25,11 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
             <Route path="/upload" element={<Upload />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/receipts" element={<Receipts />} />
+            <Route path="/add-friends" element={<AddFriends />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/settings" element={<Settings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
