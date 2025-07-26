@@ -6,15 +6,19 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Scan } from "lucide-react"
+import { appLogin, appSignup, appGoogleLogin } from "@/api/auth";
+import { useToast } from "@/components/ui/use-toast";
 
 const Login = () => {
   const navigate = useNavigate()
+  const { toast } = useToast();
   const [isSignUp, setIsSignUp] = useState(false)
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
     password: ""
   })
+  const [loading, setLoading] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -23,10 +27,35 @@ const Login = () => {
     })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle login/signup logic here
-    navigate("/home")
+    setLoading(true);
+    try {
+      if (isSignUp) {
+        await appSignup(formData.email, formData.fullName, formData.password);
+        toast({ title: "Sign up successful!", description: "You can now sign in." });
+        setIsSignUp(false);
+      } else {
+        await appLogin(formData.email, formData.password);
+        toast({ title: "Login successful!" });
+        navigate("/dashboard");
+      }
+    } catch (err: any) {
+      toast({
+        title: "Authentication failed",
+        description: err?.response?.data?.message || err.message || "An error occurred."
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const handleGoogleLogin = async () => {
+    toast({ title: "Google login not implemented yet." });
+    // Example for future:
+    // const accessToken = await getGoogleAccessToken();
+    // await appGoogleLogin(accessToken);
+    // navigate("/dashboard");
   }
 
   return (
@@ -70,8 +99,8 @@ const Login = () => {
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full">
-                  Sign In
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {isSignUp ? "Sign Up" : "Sign In"}
                 </Button>
               </form>
             </div>
@@ -118,7 +147,7 @@ const Login = () => {
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full">
+                <Button type="submit" className="w-full" disabled={loading}>
                   Sign Up
                 </Button>
               </form>
@@ -139,7 +168,8 @@ const Login = () => {
           <Button 
             variant="outline" 
             className="w-full"
-            onClick={() => navigate("/home")}
+            onClick={handleGoogleLogin}
+            disabled={loading}
           >
             Continue with Google
           </Button>
