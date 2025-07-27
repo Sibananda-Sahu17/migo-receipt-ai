@@ -17,6 +17,11 @@ AXIOS_INSTANCE.interceptors.response.use(
     return response;
   },
   error => {
+    // Handle connection refused errors
+    if (error.code === 'ERR_NETWORK' || error.message.includes('ERR_CONNECTION_REFUSED')) {
+      console.error('Backend server is not running. Please start the server at localhost:8000');
+      // You can show a toast notification here if you have access to toast
+    }
     return Promise.reject(error);
   },
 );
@@ -26,6 +31,10 @@ AXIOS_INSTANCE_BASE.interceptors.response.use(
     return response;
   },
   error => {
+    // Handle connection refused errors
+    if (error.code === 'ERR_NETWORK' || error.message.includes('ERR_CONNECTION_REFUSED')) {
+      console.error('Backend server is not running. Please start the server at localhost:8000');
+    }
     return Promise.reject(error);
   },
 );

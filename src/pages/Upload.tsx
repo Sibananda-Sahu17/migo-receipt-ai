@@ -1,4 +1,4 @@
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Camera, Upload as UploadIcon, Video, Play, FileImage, X, Users, Plus, ChevronDown } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
@@ -22,9 +22,16 @@ export default function Upload() {
   const [categories, setCategories] = useState(["Food", "Groceries", "Travel", "Entertainment", "Miscellaneous"])
   const [showNewCategoryModal, setShowNewCategoryModal] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState("")
+  const [showCameraModal, setShowCameraModal] = useState(false)
+  const [cameraMode, setCameraMode] = useState<'photo' | 'video'>('photo')
+  const [isRecording, setIsRecording] = useState(false)
+  const [stream, setStream] = useState<MediaStream | null>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const videoInputRef = useRef<HTMLInputElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const recordedChunksRef = useRef<Blob[]>([])
   const navigate = useNavigate()
   const { toast } = useToast()
 
@@ -40,7 +47,8 @@ export default function Upload() {
   }
 
   const handleCapture = () => {
-    cameraInputRef.current?.click()
+    setCameraMode('photo')
+    setShowCameraModal(true)
   }
 
   const handleFileUpload = () => {
@@ -48,7 +56,8 @@ export default function Upload() {
   }
 
   const handleVideoCapture = () => {
-    videoInputRef.current?.click()
+    setCameraMode('video')
+    setShowCameraModal(true)
   }
 
   const handleLiveStream = () => {
@@ -56,6 +65,99 @@ export default function Upload() {
       title: "Live stream",
       description: "Live stream feature coming soon!",
     })
+  }
+
+  const startCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },
+        audio: cameraMode === 'video'
+      })
+      setStream(mediaStream)
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream
+      }
+    } catch (error) {
+      console.error('Error accessing camera:', error)
+      toast({
+        title: "Camera access failed",
+        description: "Please allow camera access or try uploading a file instead.",
+        variant: "destructive",
+      })
+      setShowCameraModal(false)
+    }
+  }
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop())
+      setStream(null)
+    }
+    if (isRecording && mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop()
+      setIsRecording(false)
+    }
+  }
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const canvas = canvasRef.current
+      const video = videoRef.current
+      const context = canvas.getContext('2d')
+      
+      canvas.width = video.videoWidth
+      canvas.height = video.videoHeight
+      context?.drawImage(video, 0, 0)
+      
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], `photo_${Date.now()}.jpg`, { type: 'image/jpeg' })
+          setSelectedFiles(prev => [...prev, file])
+          setShowCameraModal(false)
+          stopCamera()
+          toast({
+            title: "Photo captured",
+            description: "Photo has been added to your uploads",
+          })
+        }
+      }, 'image/jpeg')
+    }
+  }
+
+  const startRecording = () => {
+    if (stream && videoRef.current) {
+      const mediaRecorder = new MediaRecorder(stream)
+      mediaRecorderRef.current = mediaRecorder
+      recordedChunksRef.current = []
+      
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          recordedChunksRef.current.push(event.data)
+        }
+      }
+      
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' })
+        const file = new File([blob], `video_${Date.now()}.webm`, { type: 'video/webm' })
+        setSelectedFiles(prev => [...prev, file])
+        setShowCameraModal(false)
+        stopCamera()
+        toast({
+          title: "Video recorded",
+          description: "Video has been added to your uploads",
+        })
+      }
+      
+      mediaRecorder.start()
+      setIsRecording(true)
+    }
+  }
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop()
+      setIsRecording(false)
+    }
   }
 
   const handleProcess = async () => {
@@ -153,6 +255,14 @@ export default function Upload() {
     }
   }
 
+  useEffect(() => {
+    if (showCameraModal) {
+      startCamera()
+    } else {
+      stopCamera()
+    }
+  }, [showCameraModal])
+
   return (
     <div className="min-h-screen bg-background">
       <Header title="Scan Receipt" showProfile={false} />
@@ -199,27 +309,9 @@ export default function Upload() {
 
         {/* Hidden file inputs */}
         <input
-          ref={cameraInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          multiple
-          className="hidden"
-          onChange={(e) => handleFileSelect(e.target.files)}
-        />
-        <input
           ref={fileInputRef}
           type="file"
           accept="image/*"
-          multiple
-          className="hidden"
-          onChange={(e) => handleFileSelect(e.target.files)}
-        />
-        <input
-          ref={videoInputRef}
-          type="file"
-          accept="video/*"
-          capture="environment"
           multiple
           className="hidden"
           onChange={(e) => handleFileSelect(e.target.files)}
@@ -269,6 +361,64 @@ export default function Upload() {
       </div>
 
       <Navigation />
+
+      {/* Camera Modal */}
+      <Dialog open={showCameraModal} onOpenChange={(open) => {
+        if (!open) {
+          stopCamera()
+        }
+        setShowCameraModal(open)
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {cameraMode === 'photo' ? 'Take Photo' : 'Record Video'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="relative bg-black rounded-lg overflow-hidden">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-64 object-cover"
+                onLoadedMetadata={() => {
+                  if (videoRef.current) {
+                    videoRef.current.play()
+                  }
+                }}
+              />
+              <canvas ref={canvasRef} className="hidden" />
+            </div>
+            <div className="flex justify-center gap-4">
+              {cameraMode === 'photo' ? (
+                <Button onClick={capturePhoto} className="flex-1">
+                  <Camera className="h-4 w-4 mr-2" />
+                  Capture Photo
+                </Button>
+              ) : (
+                <>
+                  {!isRecording ? (
+                    <Button onClick={startRecording} className="flex-1">
+                      <Video className="h-4 w-4 mr-2" />
+                      Start Recording
+                    </Button>
+                  ) : (
+                    <Button onClick={stopRecording} variant="destructive" className="flex-1">
+                      <X className="h-4 w-4 mr-2" />
+                      Stop Recording
+                    </Button>
+                  )}
+                </>
+              )}
+              <Button variant="outline" onClick={() => setShowCameraModal(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Processed Items Modal */}
       <Dialog open={showProcessedModal} onOpenChange={setShowProcessedModal}>
