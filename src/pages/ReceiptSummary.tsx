@@ -6,8 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Header } from "@/components/layout/header"
 import { Navigation } from "@/components/layout/navigation"
-import { getReceiptById, Receipt } from "@/api/receipt"
+import { getReceiptById, addToGoogleWallet, Receipt } from "@/api/receipt"
 import { useToast } from "@/components/ui/use-toast"
+import walletButton from "@/assets/wallet-button.png"
 
 export default function ReceiptSummary() {
   const { receiptId } = useParams()
@@ -18,7 +19,9 @@ export default function ReceiptSummary() {
   const [receipt, setReceipt] = useState<Receipt | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [saveUrl, setSaveUrl] = useState<string | null>(null)
+  const [walletLoading, setWalletLoading] = useState(false)
+  const [walletUrlLoaded, setWalletUrlLoaded] = useState(false)
+  const [saveUrl, setSaveUrl] = useState(null)
 
   // Format date to display format (same as Receipts.tsx)
   const formatDate = (dateString: string) => {
@@ -146,6 +149,33 @@ export default function ReceiptSummary() {
     navigate("/split-with-friends", { state: { receiptData: receipt } })
   }
 
+  const handleAddToGoogleWallet = async () => {
+    if (!receipt?.id) return
+    
+    try {
+      setWalletLoading(true)
+      // Call GET /receipt/{receipt_id} API
+      const response = await getReceiptById(receipt.id)
+      console.log('Receipt data for Google Wallet:', response.data)
+      setWalletUrlLoaded(true)
+      setSaveUrl(response.data)
+      
+      toast({
+        title: "Success",
+        description: "Receipt data retrieved for Google Wallet!",
+      })
+    } catch (error: any) {
+      console.error('Error getting receipt for Google Wallet:', error)
+      toast({
+        title: "Error",
+        description: error?.response?.data?.message || "Failed to get receipt data for Google Wallet. Please try again.",
+        variant: "destructive"
+      })
+    } finally {
+      setWalletLoading(false)
+    }
+  }
+
   // Show loading state
   if (loading) {
     return (
@@ -256,10 +286,15 @@ export default function ReceiptSummary() {
             Split with Friends
           </Button>
           
-          <a href={saveUrl} className="w-full">
-            <DollarSign className="h-4 w-4 mr-2" />
-            Export Receipt
-          </a>
+          {
+            !walletUrlLoaded ? (
+              <Button variant="outline" className="w-full" onClick={handleAddToGoogleWallet} disabled={walletLoading}>
+                <DollarSign className="h-4 w-4 mr-2" />
+                {walletLoading ? "Getting Receipt Data..." : "Get Receipt for Google Wallet"}
+              </Button>
+            ) : <a href={saveUrl}><img src={walletButton} alt="Google Wallet Button" /></a>
+          }
+        
         </div>
       </div>
 
