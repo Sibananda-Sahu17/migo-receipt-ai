@@ -1,29 +1,136 @@
-import { useParams, useNavigate } from "react-router-dom"
-import { ArrowLeft, Users, Calendar, Tag, DollarSign } from "lucide-react"
+import { useParams, useNavigate, useLocation } from "react-router-dom"
+import { useState, useEffect } from "react"
+import { ArrowLeft, Users, Calendar, Tag, DollarSign, Loader2, CreditCard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Header } from "@/components/layout/header"
 import { Navigation } from "@/components/layout/navigation"
+import { getReceiptById, Receipt } from "@/api/receipt"
+import { useToast } from "@/components/ui/use-toast"
 
 export default function ReceiptSummary() {
   const { receiptId } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
+  const { toast } = useToast()
+  
+  const [receipt, setReceipt] = useState<Receipt | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [saveUrl, setSaveUrl] = useState<string | null>(null)
 
-  // Mock data - in real app, fetch from API using receiptId
-  const receipt = {
-    id: receiptId,
-    merchant: "Starbucks Coffee",
-    amount: "₹450",
-    date: "Today, 2:30 PM",
-    category: "Food",
-    status: "Processed",
-    items: [
-      { name: "Coffee Latte", price: "₹250" },
-      { name: "Chocolate Muffin", price: "₹120" },
-      { name: "Service Tax", price: "₹80" }
-    ]
+  // Format date to display format (same as Receipts.tsx)
+  const formatDate = (dateString: string) => {
+    try {
+      if (!dateString || dateString === 'Invalid Date') {
+        return 'Unknown Date'
+      }
+      
+      const date = new Date(dateString)
+      
+      if (isNaN(date.getTime())) {
+        return 'Invalid Date'
+      }
+      
+      const now = new Date()
+      const diffTime = Math.abs(now.getTime() - date.getTime())
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      
+      if (diffDays === 1) {
+        return "Today, " + date.toLocaleTimeString('en-US', { 
+          hour: 'numeric', 
+          minute: '2-digit',
+          hour12: true 
+        })
+      } else if (diffDays === 2) {
+        return "Yesterday, " + date.toLocaleTimeString('en-US', { 
+          hour: 'numeric', 
+          minute: '2-digit',
+          hour12: true 
+        })
+      } else {
+        return date.toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric' 
+        }) + ", " + date.toLocaleTimeString('en-US', { 
+          hour: 'numeric', 
+          minute: '2-digit',
+          hour12: true 
+        })
+      }
+    } catch (error) {
+      console.error('Error formatting date:', error, dateString)
+      return 'Invalid Date'
+    }
   }
+
+  // Fetch receipt data
+  const fetchReceipt = async () => {
+    if (!receiptId) {
+      setError('Receipt ID is required')
+      setLoading(false)
+      return
+    }
+
+    try {
+      setLoading(true)
+      setError(null)
+      
+      // First, try to get data from navigation state (if coming from receipts list)
+      const stateReceipt = location.state?.receiptData
+      if (stateReceipt) {
+        console.log('Using receipt data from navigation state:', stateReceipt)
+        setReceipt(stateReceipt)
+        setLoading(false)
+        return
+      }
+
+      // If no state data, fetch from API
+      console.log('Fetching receipt from API with ID:', receiptId)
+      const response = await getReceiptById(receiptId)
+      
+      if (!response || !response.data) {
+        throw new Error('Invalid response from server')
+      }
+
+      const receiptData = response.data as any
+      console.log('API Response:', receiptData)
+
+      // Transform API data to match expected format
+      const formattedReceipt: Receipt = {
+        id: receiptData.receipt_id || receiptData.id || receiptId,
+        merchant: receiptData.merchant || receiptData.merchant_name || receiptData.store || receiptData.shop || receiptData.vendor || receiptData.business_name || 'Unknown Merchant',
+        amount: receiptData.amount || receiptData.total || receiptData.price || receiptData.cost || receiptData.total_amount || receiptData.grand_total || receiptData.final_amount || '₹0',
+        date: formatDate(receiptData.created_at || receiptData.date || receiptData.timestamp || receiptData.created_date || receiptData.scan_date || receiptData.processed_at || new Date().toISOString()),
+        category: receiptData.category || receiptData.type || receiptData.group || receiptData.classification || 'Misc',
+        status: receiptData.status || receiptData.state || receiptData.processing_status || 'Pending',
+        items: Array.isArray(receiptData.items) ? receiptData.items.map((item: any) => ({
+          name: item.name || item.product_name || item.description || item.item_name || 'Unknown Item',
+          price: item.price || item.cost || item.amount || item.unit_price || '₹0'
+        })) : [],
+        created_at: receiptData.created_at || receiptData.date || receiptData.timestamp || receiptData.created_date || new Date().toISOString(),
+        updated_at: receiptData.updated_at || receiptData.modified_at || receiptData.created_at || new Date().toISOString()
+      }
+
+      setReceipt(formattedReceipt)
+    } catch (error: any) {
+      console.error('Error fetching receipt:', error)
+      setError(error?.message || 'Failed to load receipt')
+      toast({
+        title: "Error",
+        description: "Failed to load receipt details. Please try again.",
+        variant: "destructive"
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Load receipt data on component mount
+  useEffect(() => {
+    fetchReceipt()
+  }, [receiptId])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -35,7 +142,51 @@ export default function ReceiptSummary() {
   }
 
   const handleSplitWithFriends = () => {
+    if (!receipt) return
     navigate("/split-with-friends", { state: { receiptData: receipt } })
+  }
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading receipt details...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error state
+  if (error || !receipt) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header title="Receipt Details" showProfile={false} />
+        <div className="px-4 pt-4 pb-20 max-w-lg mx-auto w-full">
+          <Button 
+            variant="outline" 
+            className="mb-4" 
+            onClick={() => navigate('/receipts')}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Receipts
+          </Button>
+          
+          <Card className="text-center py-12">
+            <CardContent>
+              <p className="text-muted-foreground mb-4">
+                {error || 'Receipt not found'}
+              </p>
+              <Button onClick={() => navigate('/receipts')}>
+                Back to Receipts
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+        <Navigation />
+      </div>
+    )
   }
 
   return (
@@ -105,10 +256,10 @@ export default function ReceiptSummary() {
             Split with Friends
           </Button>
           
-          <Button variant="outline" className="w-full">
+          <a href={saveUrl} className="w-full">
             <DollarSign className="h-4 w-4 mr-2" />
             Export Receipt
-          </Button>
+          </a>
         </div>
       </div>
 
