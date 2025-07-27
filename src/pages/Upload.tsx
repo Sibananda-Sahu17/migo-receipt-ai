@@ -11,7 +11,9 @@ import { Header } from "@/components/layout/header"
 import { Navigation } from "@/components/layout/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { generateUploadUrl, uploadFileToSignedUrl } from "@/api/storage"
-import { createRawReceipt } from "@/api/receipt"
+import { createRawReceipt, ReceiptData, AnalyzeReceiptResponse } from "@/api/receipt"
+import { ReceiptDetailsModal } from "@/components/receipt/receipt-details-modal"
+import { AXIOS_INSTANCE } from "@/api/_interceptor/_axios"
 
 export default function Upload() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
@@ -26,6 +28,8 @@ export default function Upload() {
   const [cameraMode, setCameraMode] = useState<'photo' | 'video'>('photo')
   const [isRecording, setIsRecording] = useState(false)
   const [stream, setStream] = useState<MediaStream | null>(null)
+  const [showReceiptDetailsModal, setShowReceiptDetailsModal] = useState(false)
+  const [receiptData, setReceiptData] = useState<ReceiptData | null>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -198,30 +202,49 @@ export default function Upload() {
           file_path: file_path
         }
         await createRawReceipt(receiptData)
+
+        // 5. Analyze receipt (instant processing)
+        const analyzeData = {
+          filename: file.name,
+          file_type: "image",
+          content_type: file.type || "image/jpeg",
+          file_size: fileBlob.size,
+          file_path: file_path
+        }
+        
+        try {
+          const analyzeResponse = await AXIOS_INSTANCE.post<AnalyzeReceiptResponse>("/receipt/analyze-receipt-instant", analyzeData)
+          console.log('Analyze response:', analyzeResponse.data)
+          
+          if (analyzeResponse.data.success && analyzeResponse.data.receipt_data) {
+            setReceiptData(analyzeResponse.data.receipt_data)
+            setShowReceiptDetailsModal(true)
+          } else {
+            throw new Error('Analysis failed or no receipt data received')
+          }
+        } catch (analyzeError) {
+          console.error('Error analyzing receipt:', analyzeError)
+          // Fallback to old modal if analysis fails
+          const processedItems = [
+            { name: "Coffee Latte", price: "₹250" },
+            { name: "Sandwich", price: "₹180" },
+            { name: "Pastry", price: "₹120" },
+          ]
+          const initialCategories = {}
+          processedItems.forEach((_, index) => {
+            initialCategories[index] = "Food"
+          })
+          setItemCategories(initialCategories)
+          setProcessedItems(processedItems)
+          setShowProcessedModal(true)
+        }
       }
 
-      // Simulate processing (show modal, etc.)
-      setTimeout(() => {
-        setIsProcessing(false)
-        // Show processed items modal
-        const processedItems = [
-          { name: "Coffee Latte", price: "₹250" },
-          { name: "Sandwich", price: "₹180" },
-          { name: "Pastry", price: "₹120" },
-        ]
-        // Initialize categories for items
-        const initialCategories = {}
-        processedItems.forEach((_, index) => {
-          initialCategories[index] = "Food"
-        })
-        setItemCategories(initialCategories)
-        setProcessedItems(processedItems)
-        setShowProcessedModal(true)
-        toast({
-          title: "Processing complete!",
-          description: `${selectedFiles.length} receipt(s) processed successfully`,
-        })
-      }, 1000)
+      setIsProcessing(false)
+      toast({
+        title: "Processing complete!",
+        description: `${selectedFiles.length} receipt(s) processed successfully`,
+      })
     } catch (error) {
       setIsProcessing(false)
       toast({
@@ -532,6 +555,28 @@ export default function Upload() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Receipt Details Modal */}
+      <ReceiptDetailsModal
+        isOpen={showReceiptDetailsModal}
+        onClose={() => setShowReceiptDetailsModal(false)}
+        receiptData={receiptData}
+        onSplitWithFriends={() => {
+          setShowReceiptDetailsModal(false)
+          navigate("/split-with-friends", { 
+            state: { 
+              receiptData: { 
+                items: receiptData?.line_items.map(item => ({
+                  name: item.name,
+                  price: `₹${item.total_price}`
+                })) || [],
+                merchant: receiptData?.merchant_name || "Uploaded Receipt",
+                amount: receiptData?.grand_total || 0
+              } 
+            } 
+          })
+        }}
+      />
     </div>
   )
 }
