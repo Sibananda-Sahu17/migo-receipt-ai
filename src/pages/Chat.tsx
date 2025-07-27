@@ -6,9 +6,13 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Header } from "@/components/layout/header"
 import { Navigation } from "@/components/layout/navigation"
 import { ChatSidebar } from "@/components/chat/chat-sidebar"
+import { ChartMessage } from "@/components/chat/chart-message"
 import { useAuth } from "@/contexts/AuthContext"
 import { useChat } from "@/hooks/use-chat"
 import { ChatSession, ChatMessage } from "@/api/chat"
+import { ChatMessageWithChart } from "@/types/chart"
+import { simulateAIResponseWithChart, getChartDataOnly } from "@/utils/test-chart-data"
+import { parseChartData } from "@/utils/chart-parser"
 
 export default function Chat() {
   const { user } = useAuth();
@@ -85,6 +89,24 @@ export default function Chat() {
       console.error('Failed to delete session:', error);
     }
   }, [deleteSession]);
+
+  // Test function to simulate AI response with chart
+  const handleTestChart = useCallback((chartType: 'pie' | 'bar' | 'customPie' | 'monthlyBar' | 'jsonOnly' | 'jsonCodeBlock') => {
+    const testResponse = simulateAIResponseWithChart(chartType);
+    
+    // Create a mock AI message (the chart data will be parsed from content)
+    const mockMessage: ChatMessage = {
+      id: `test-${Date.now()}`,
+      session_id: currentSession?.id || 'test-session',
+      user_id: user?.email || 'test-user',
+      role: 'ai',
+      content: testResponse,
+      created_at: new Date().toISOString()
+    };
+    
+    // Add the mock message to the current messages
+    setMessages([...messages, mockMessage]);
+  }, [messages, setMessages, currentSession, user]);
 
   const quickQuestions = [
     "How much did I spend on groceries this month?",
@@ -176,36 +198,125 @@ export default function Chat() {
                       </Button>
                     ))}
                   </div>
+                  
+                  {/* Test Chart Buttons */}
+                  <div className="mt-6">
+                    <h4 className="text-sm font-semibold mb-3 text-center">Test Charts:</h4>
+                    <div className="grid grid-cols-2 gap-2 max-w-md mx-auto">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleTestChart('pie')}
+                        className="text-xs"
+                      >
+                        Test Pie Chart
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleTestChart('bar')}
+                        className="text-xs"
+                      >
+                        Test Bar Chart
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleTestChart('customPie')}
+                        className="text-xs"
+                      >
+                        Test Custom Pie
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleTestChart('monthlyBar')}
+                        className="text-xs"
+                      >
+                        Test Monthly Bar
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleTestChart('jsonOnly')}
+                        className="text-xs"
+                      >
+                        Test JSON Only
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleTestChart('jsonCodeBlock')}
+                        className="text-xs"
+                      >
+                        Test Code Block
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               )}
 
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  {message.role === 'ai' && (
-                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                      <Bot className="h-4 w-4 text-primary-foreground" />
-                    </div>
-                  )}
+              {messages.map((message) => {
+                // Parse chart data from AI messages
+                let chartData = null;
+                let cleanContent = message.content;
+                
+                if (message.role === 'ai') {
+                  // Try to parse chart data from the message content
+                  chartData = parseChartData(message.content);
                   
-                  <Card className={`max-w-[80%] ${message.role === 'user' ? 'bg-primary text-primary-foreground' : ''}`}>
-                    <CardContent className="p-3">
-                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                      <p className="text-xs opacity-70 mt-1">
-                        {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </CardContent>
-                  </Card>
-                  
-                  {message.role === 'user' && (
-                    <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
-                      <User className="h-4 w-4" />
+                  // If chart data is found, remove the JSON from the displayed content
+                  if (chartData) {
+                    // Remove JSON code block (including ```json and ``` markers) from the content for display
+                    cleanContent = message.content.replace(/```json\s*\{[\s\S]*?\}\s*```/g, '').trim();
+                    
+                    // Also remove any standalone JSON objects that might not be in code blocks
+                    cleanContent = cleanContent.replace(/\{[\s\S]*\}/, '').trim();
+                    
+                    // If the content is now empty or just whitespace, add a default message
+                    if (!cleanContent || cleanContent.length === 0) {
+                      cleanContent = "Here's your data visualization:";
+                    }
+                  }
+                }
+                
+                return (
+                  <div
+                    key={message.id}
+                    className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    {message.role === 'ai' && (
+                      <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                        <Bot className="h-4 w-4 text-primary-foreground" />
+                      </div>
+                    )}
+                    
+                    <div className={`max-w-[80%] ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <Card className={`${message.role === 'user' ? 'bg-primary text-primary-foreground' : ''}`}>
+                        <CardContent className="p-3">
+                          <p className="text-sm whitespace-pre-wrap">{cleanContent}</p>
+                          <p className="text-xs opacity-70 mt-1">
+                            {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </CardContent>
+                      </Card>
+                      
+                      {/* Render chart if available */}
+                      {chartData && message.role === 'ai' && (
+                        <div className="mt-3">
+                          <ChartMessage chartData={chartData} />
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              ))}
+                    
+                    {message.role === 'user' && (
+                      <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
+                        <User className="h-4 w-4" />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
               <div ref={messagesEndRef} />
             </div>
 

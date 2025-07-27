@@ -6,13 +6,14 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Scan } from "lucide-react"
-import { appLogin, appSignup, appGoogleLogin } from "@/api/auth";
 import { useToast } from "@/components/ui/use-toast";
 import { useGoogleLogin } from "@react-oauth/google";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
   const navigate = useNavigate()
   const { toast } = useToast();
+  const { login, signup, googleLogin } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false)
   const [formData, setFormData] = useState({
     fullName: "",
@@ -33,14 +34,14 @@ const Login = () => {
     setLoading(true);
     try {
       if (isSignUp) {
-        await appSignup(formData.email, formData.fullName, formData.password);
+        await signup(formData.email, formData.fullName, formData.password);
         toast({ title: "Sign up successful!"});
         setIsSignUp(false);
 
-        await appLogin(formData.email, formData.password);
+        await login(formData.email, formData.password);
         navigate("/home");
       } else {
-        await appLogin(formData.email, formData.password);
+        await login(formData.email, formData.password);
         toast({ title: "Login successful!" });
         navigate("/home");
       }
@@ -54,12 +55,12 @@ const Login = () => {
     }
   }
 
-  const googleLogin = useGoogleLogin({
+  const googleLoginHandler = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       setLoading(true);
       try {
         // tokenResponse contains access_token
-        await appGoogleLogin(tokenResponse.access_token);
+        await googleLogin(tokenResponse.access_token);
         toast({ title: "Google login successful!" });
         navigate("/home");
       } catch (err: any) {
@@ -78,7 +79,7 @@ const Login = () => {
   });
 
   const handleGoogleLogin = async () => {
-    googleLogin();
+    googleLoginHandler();
   }
 
   return (

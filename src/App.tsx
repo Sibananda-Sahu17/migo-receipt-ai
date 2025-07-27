@@ -16,6 +16,7 @@ import Grocery from "./pages/Grocery";
 import Login from "./pages/Login";
 import SplitWithFriends from "./pages/SplitWithFriends";
 import Untracked from "./pages/Untracked";
+import ChartTest from "./pages/ChartTest";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
               <Route path="/settings" element={<Settings />} />
               <Route path="/untracked" element={<Untracked />} />
               <Route path="/split-with-friends" element={<SplitWithFriends />} />
+              <Route path="/chart-test" element={<ChartTest />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
