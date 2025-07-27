@@ -33,15 +33,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        console.log('AuthContext: Checking authentication...')
         // You can add a "me" endpoint to verify the current user's session
         // For now, we'll check if there's a user in localStorage
         const storedUser = localStorage.getItem('user');
+        console.log('AuthContext: Stored user from localStorage:', storedUser)
+        
         if (storedUser) {
-          setUser(JSON.parse(storedUser));
+          const parsedUser = JSON.parse(storedUser);
+          console.log('AuthContext: Parsed user:', parsedUser)
+          setUser(parsedUser);
+        } else {
+          console.log('AuthContext: No stored user found')
         }
       } catch (error) {
         console.error('Auth check failed:', error);
       } finally {
+        console.log('AuthContext: Setting isLoading to false')
         setIsLoading(false);
       }
     };
